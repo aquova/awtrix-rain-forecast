@@ -6,6 +6,7 @@ import asyncdispatch
 import httpclient
 import json
 import strformat
+import os
 
 import nmqtt
 
@@ -33,7 +34,8 @@ proc send_mqtt(server, topic, msg: string) {.async.} =
     await mqtt.disconnect()
 
 proc main() =
-    let config = parseFile("config.json")
+    let config_filepath = if paramCount() == 1: paramStr(1) else: "config.json"
+    let config = parseFile(config_filepath)
     let api_key = config["api"].getStr()
     let lat = config["coords"]["lat"].getStr()
     let long = config["coords"]["long"].getStr()
