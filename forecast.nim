@@ -48,13 +48,15 @@ proc parse_precip(data: JsonNode): array[NUM_PRECIP, float] =
         let percentage = data["hourly"]["data"][i]["precipProbability"].getFloat()
         result[i] = percentage
 
-proc send_mqtt(server, topic, msg: string) {.async.} =
+proc send_mqtt(server: string, topics: JsonNode, msg: string) {.async.} =
     let mqtt = newMqttCtx("nmqttClient")
     mqtt.set_host(server, 1883)
 
     await mqtt.start()
-    await mqtt.publish(topic, msg)
-    await sleepAsync(500)
+    for topic in topics:
+        let topic = topic.getStr()
+        await mqtt.publish(topic, msg)
+        await sleepAsync(500)
     await mqtt.disconnect()
 
 proc main() =
@@ -79,9 +81,9 @@ proc main() =
     let icon = parse_icon(data)
 
     let mqtt_server = config["mqtt"]["server"].getStr()
-    let mqtt_topic = config["mqtt"]["topic"].getStr()
+    let mqtt_topics = config["mqtt"]["topics"]
     var j = %*{"icon": icon, "bar": converted, "autoscale": false}
-    waitFor send_mqtt(mqtt_server, mqtt_topic, $j)
+    waitFor send_mqtt(mqtt_server, mqtt_topics, $j)
 
 when isMainModule:
     main()
